@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대한민국 소버린 AI 현황 및 미래 시나리오</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #F5F5F5;
+            overflow: hidden; /* 스크롤바 숨김 (페이지 전환 시 필요) */
+        }
+        .page {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: transform 0.5s ease-in-out; /* 페이지 전환 애니메이션 */
+            color: #2F2F2F;
+            overflow-y: auto; /* 내용이 넘칠 경우 스크롤 허용 */
+            
+            /* 모든 페이지의 기본 배경 패턴 */
+            background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.1"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zm0-30V0H4v4H0v2h4v4h2V6h4V4H6z"%3E%3C/path%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+            background-color: #F5F5F5; /* 기본 배경색 */
+        }
+        .page-active {
+            transform: translateX(0%);
+            z-index: 10; /* 활성화된 페이지를 맨 위로 */
+        }
+        .page-prev {
+            transform: translateX(-100%);
+            z-index: 1;
+        }
+        .page-next {
+            transform: translateX(100%);
+            z-index: 1;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .kpi-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #00A6ED, #7FB800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .navigation-buttons {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100; /* 네비게이션 버튼을 항상 맨 위로 */
+            display: flex;
+            gap: 1rem;
+        }
+        .nav-button {
+            background-color: #00A6ED;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: background-color 0.3s ease;
+        }
+        .nav-button:hover {
+            background-color: #008CC7;
+        }
+        .nav-button:disabled {
+            background-color: #A0AEC0;
+            cursor: not-allowed;
+        }
+
+        /* 첫 번째 타이틀 페이지 전용 스타일 */
+        #page-1 {
+            /* ai.jpg 파일을 직접 참조하도록 경로 수정 */
+            background-image: url('ai.jpg'); 
+            background-size: cover;
+            background-position: center;
+            color: white; /* 텍스트 색상 흰색 */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7); /* 텍스트 그림자 */
+        }
+        #page-1 h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+        #page-1 p {
+            font-size: 1.5rem;
+            max-width: 800px;
+            text-align: center;
+        }
+        .page-content {
+            background-color: rgba(255, 255, 255, 0.95); /* 콘텐츠 카드 배경색 (약간 투명) */
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            max-width: 1000px;
+            width: 100%;
+            max-height: calc(100vh - 4rem); /* 패딩 고려 */
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="presentation-container" class="relative w-screen h-screen">
+        <div id="page-1" class="page page-active">
+            <h1 class="text-white text-7xl md:text-8xl font-black mb-6">한국형 소버린 AI의 미래</h1>
+            <p class="text-white text-xl md:text-2xl mt-4 max-w-4xl text-center">
+                디지털 주권 확보를 위한 대한민국의 AI 전략, 현황 및 미래 시나리오
+            </p>
+        </div>
+
+        <div id="page-2" class="page page-next">
+            <div class="page-content text-center">
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-4 gradient-text">기술 독립을 향한 거대한 도전</h2>
+                <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+                    한국은 디지털 주권 확보를 위해 자체 인프라, 데이터, 기술로 독립적인 AI 생태계를 구축하는 **'소버린 AI'** 전략에 국가적 역량을 집중하고 있습니다.
+                </p>
+                <div class="mt-8 bg-white rounded-xl shadow-lg p-6 inline-block">
+                    <p class="text-xl font-bold text-gray-700">정부 '독자 AI 파운데이션 모델' 프로젝트</p>
+                    <p class="text-5xl font-black text-[#00A6ED] mt-2">약 2,400억 원</p>
+                    <p class="text-md text-gray-500 mt-1">대규모 투자 및 지원</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-3" class="page page-next">
+            <div class="page-content">
+                <h3 class="text-3xl font-bold text-center mb-2">글로벌 AI 경쟁 속 한국의 위치</h3>
+                <p class="text-center text-gray-600 mb-10 max-w-2xl mx-auto">양적 성과에도 불구하고, 연구 및 투자 등 질적 측면에서는 아직 갈 길이 멉니다.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    <div class="kpi-card text-center">
+                        <p class="text-lg font-bold text-gray-600">종합 순위</p>
+                        <p class="text-6xl font-black text-[#7FB800] mt-2">6<span class="text-3xl">위</span></p>
+                    </div>
+                    <div class="kpi-card text-center">
+                        <p class="text-lg font-bold text-gray-600">실행력 순위</p>
+                        <p class="text-6xl font-black text-[#FFB400] mt-2">10<span class="text-3xl">위</span></p>
+                        <p class="text-sm text-red-500 font-semibold mt-1">(3년 연속 하락)</p>
+                    </div>
+                    <div class="kpi-card text-center">
+                        <p class="text-lg font-bold text-gray-600">인구 대비 특허 수</p>
+                        <p class="text-6xl font-black text-[#00A6ED] mt-2">1<span class="text-3xl">위</span></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="kpi-card">
+                        <h4 class="text-xl font-bold text-center mb-4">AI 연구 및 민간투자 경쟁력</h4>
+                        <p class="text-sm text-center text-gray-500 mb-4">미국, 중국 대비 연구와 민간투자 점수가 현저히 낮아 핵심 역량 강화가 시급합니다. (100점 만점)</p>
+                        <div class="chart-container">
+                            <canvas id="researchInvestmentChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <h4 class="text-xl font-bold text-center mb-4">특허의 '질적' 가치</h4>
+                        <p class="text-sm text-center text-gray-500 mb-4">특허 수는 세계 1위지만, 특허 인용지수(CPI)는 평균 이하로 실용화 및 기술 영향력이 부족함을 시사합니다.</p>
+                        <div class="chart-container">
+                            <canvas id="patentQualityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-4" class="page page-next">
+            <div class="page-content">
+                <h3 class="text-3xl font-bold text-center mb-2">소버린 AI 청사진: 정부와 기업의 총력전</h3>
+                <p class="text-center text-gray-600 mb-10 max-w-2xl mx-auto">정부의 강력한 정책과 기업의 과감한 투자가 소버린 AI 구축의 양대 축을 이루고 있습니다.</p>
+                
+                <div class="bg-white rounded-lg shadow-md p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div class="text-center p-4 rounded-lg bg-blue-50">
+                            <p class="text-2xl mb-2">🏢</p>
+                            <h4 class="font-bold text-lg text-blue-800">NAVER</h4>
+                            <p class="text-sm text-gray-700 mt-2">하이퍼클로바X 고도화<br>GPU 1.4만 장 확보 추진</p>
+                        </div>
+                        <div class="text-center p-4 rounded-lg bg-green-50">
+                            <p class="text-2xl mb-2">💡</p>
+                            <h4 class="font-bold text-lg text-green-800">LG</h4>
+                            <p class="text-sm text-gray-700 mt-2">엑사원(EXAONE) 4.0<br>수주액 1,000억 원 돌파</p>
+                        </div>
+                        <div class="text-center p-4 rounded-lg bg-orange-50">
+                            <p class="text-2xl mb-2">📡</p>
+                            <h4 class="font-bold text-lg text-orange-800">SKT</h4>
+                            <p class="text-sm text-gray-700 mt-2">AI 데이터센터 3.4조 투자<br>GPU 6만 장 규모 추진</p>
+                        </div>
+                        <div class="text-center p-4 rounded-lg bg-indigo-50">
+                            <p class="text-2xl mb-2">💾</p>
+                            <h4 class="font-bold text-lg text-indigo-800">SAMSUNG</h4>
+                            <p class="text-sm text-gray-700 mt-2">AI 반도체 기술 선도<br>시스템 반도체 133조 투자</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-5" class="page page-next">
+            <div class="page-content">
+                <h3 class="text-3xl font-bold text-center mb-2">핵심 과제: 4대 장벽을 넘어야 한다 (1/2)</h3>
+                <p class="text-center text-gray-600 mb-10 max-w-2xl mx-auto">소버린 AI 실현을 위해 반드시 해결해야 할 구조적인 문제들입니다.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="kpi-card">
+                        <h4 class="text-xl font-bold text-center mb-4">1. 만성적 인재 부족과 두뇌 유출</h4>
+                        <p class="text-sm text-center text-gray-500 mb-4">2027년까지 약 12,800명의 AI 인력이 부족할 전망이며, 우수 인재의 해외 유출이 심각합니다.</p>
+                        <div class="flex justify-center items-center h-48 text-6xl">
+                            <span>🇰🇷</span>
+                            <span class="mx-4 text-red-500 animate-pulse">→ ✈️ →</span>
+                            <span>🌍</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <h4 class="text-xl font-bold text-center mb-4">2. 데이터센터 전력난 심화</h4>
+                        <p class="text-sm text-center text-gray-500 mb-4">데이터센터의 전력 수요는 폭증하지만, 공급 인프라는 한계에 부딪히고 있습니다.</p>
+                        <div class="chart-container">
+                            <canvas id="powerDemandChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-6" class="page page-next">
+            <div class="page-content">
+                <h3 class="text-3xl font-bold text-center mb-2">핵심 과제: 4대 장벽을 넘어야 한다 (2/2)</h3>
+                <p class="text-center text-gray-600 mb-10 max-w-2xl mx-auto">소버린 AI 실현을 위해 반드시 해결해야 할 구조적인 문제들입니다.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="kpi-card">
+                        <h4 class="text-xl font-bold text-center mb-4">3. 반도체 산업의 불균형</h4>
+                        <p class="text-sm text-center text-gray-500 mb-4">메모리 반도체는 세계 1위지만, AI의 핵심인 시스템 반도체(팹리스) 점유율은 3%에 불과합니다.</p>
+                        <div class="chart-container">
+                            <canvas id="semiconductorChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <h4 class="text-xl font-bold text-center mb-4">4. 양질의 한국어 데이터 부족</h4>
+                        <p class="text-sm text-center text-gray-500 mb-4">글로벌 AI 모델 학습에 사용된 한국어 데이터는 0.015% 미만으로, 문화적 편향성 문제가 발생할 수 있습니다.</p>
+                        <div class="chart-container">
+                            <canvas id="dataScarcityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-7" class="page page-next">
+            <div class="page-content">
+                <h3 class="text-3xl font-bold text-center mb-2">미래 시나리오: 한국 AI의 두 갈래 길</h3>
+                <p class="text-center text-gray-600 mb-10 max-w-2xl mx-auto">한국의 소버린 AI는 어떤 미래를 맞이하게 될까요? 두 가지 가능성을 분석합니다.</p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="kpi-card border-2 border-[#00A6ED]">
+                        <h4 class="text-2xl font-bold text-center text-[#00A6ED] mb-4">시나리오 1: 기술 자립 가속화</h4>
+                        <p class="text-center text-gray-600 mb-6">국가 역량을 총동원하여 독자 기술 개발과 인프라 내재화에 집중하는 모델</p>
+                        <div class="space-y-4">
+                            <div class="bg-green-100 p-3 rounded-lg">
+                                <p class="font-bold text-green-800">👍 장점</p>
+                                <ul class="list-disc list-inside text-sm text-gray-700 mt-1">
+                                    <li>강력한 데이터 주권 및 국가 안보 확보</li>
+                                    <li>한국 특화 AI 모델 경쟁력 강화</li>
+                                    <li>국내 AI 산업 생태계 수직 통합</li>
+                                </ul>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-lg">
+                                <p class="font-bold text-red-800">👎 리스크</p>
+                                <ul class="list-disc list-inside text-sm text-gray-700 mt-1">
+                                    <li>글로벌 기술 트렌드 고립 가능성</li>
+                                    <li>막대한 초기 투자 비용 및 효율성 저하</li>
+                                    <li>국내 시장 규모의 한계</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="kpi-card border-2 border-[#7FB800]">
+                        <h4 class="text-2xl font-bold text-center text-[#7FB800] mb-4">시나리오 2: 글로벌 협력 중심</h4>
+                        <p class="text-center text-gray-600 mb-6">오픈소스와 글로벌 파트너십을 적극 활용하여 특정 분야에 집중하는 모델</p>
+                        <div class="space-y-4">
+                            <div class="bg-green-100 p-3 rounded-lg">
+                                <p class="font-bold text-green-800">👍 장점</p>
+                                <ul class="list-disc list-inside text-sm text-gray-700 mt-1">
+                                    <li>빠른 기술 발전 및 비용 효율성 증대</li>
+                                    <li>글로벌 니치 시장 공략 및 해외 진출 확대</li>
+                                    <li>다양한 인재 풀 확보 용이</li>
+                                </ul>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-lg">
+                                <p class="font-bold text-red-800">👎 리스크</p>
+                                <ul class="list-disc list-inside text-sm text-gray-700 mt-1">
+                                    <li>글로벌 빅테크 기술 종속 심화</li>
+                                    <li>데이터 주권 및 보안 위협 증가</li>
+                                    <li>국내 자체 개발 역량 약화 가능성</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-8" class="page page-next">
+            <div class="page-content text-center">
+                <h3 class="text-3xl font-bold mb-2">결론: '개방형 소버린 AI'를 향하여</h3>
+                <p class="max-w-3xl mx-auto text-gray-600">
+                    한국의 소버린 AI 성공은 완전한 고립이 아닌, 핵심 기술은 내재화하되 글로벌 협력을 통해 시너지를 창출하는 **균형 잡힌 '개방형' 전략**에 달려 있습니다. 기술 자립과 글로벌 협력의 장점을 조화시키는 유연한 접근이 필요합니다.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation-buttons">
+        <button id="prevBtn" class="nav-button" disabled>이전</button>
+        <button id="nextBtn" class="nav-button">다음</button>
+    </div>
+
+    <script>
+        const FONT_COLOR = '#2F2F2F';
+        const GRID_COLOR = '#E5E7EB';
+        const PALETTE = {
+            blue: '#00A6ED',
+            green: '#7FB800',
+            amber: '#FFB400',
+            orange: '#F6511D',
+        };
+
+        Chart.defaults.color = FONT_COLOR;
+        Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
+
+        const tooltipTitleCallback = (tooltipItems) => {
+            const item = tooltipItems[0];
+            let label = item.chart.data.labels[item.dataIndex];
+            if (Array.isArray(label)) {
+                return label.join(' ');
+            }
+            return label;
+        };
+        
+        const SHARED_TOOLTIP_OPTIONS = {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: tooltipTitleCallback
+                    }
+                }
+            }
+        };
+
+        // 차트를 렌더링하는 함수
+        function renderCharts() {
+            // 각 차트 인스턴스를 저장할 전역 변수 (재렌더링 시 기존 차트 파괴 위함)
+            if (document.getElementById('researchInvestmentChart')) {
+                if (window.researchInvestmentChart instanceof Chart) {
+                    window.researchInvestmentChart.destroy(); // 기존 차트 파괴
+                }
+                const researchInvestmentData = {
+                    labels: ['미국', '중국', '한국'],
+                    datasets: [
+                        {
+                            label: '연구',
+                            data: [100, 54, 11],
+                            backgroundColor: PALETTE.blue,
+                            borderColor: PALETTE.blue,
+                            borderWidth: 1
+                        },
+                        {
+                            label: '민간투자',
+                            data: [100, 48, 14],
+                            backgroundColor: PALETTE.green,
+                            borderColor: PALETTE.green,
+                            borderWidth: 1
+                        }
+                    ]
+                };
+                window.researchInvestmentChart = new Chart(document.getElementById('researchInvestmentChart'), {
+                    type: 'bar',
+                    data: researchInvestmentData,
+                    options: {
+                        ...SHARED_TOOLTIP_OPTIONS,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: GRID_COLOR },
+                                title: { display: true, text: '점수 (100점 만점)' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            ...SHARED_TOOLTIP_OPTIONS.plugins,
+                            legend: { position: 'top' },
+                        }
+                    }
+                });
+            }
+
+            if (document.getElementById('patentQualityChart')) {
+                if (window.patentQualityChart instanceof Chart) {
+                    window.patentQualityChart.destroy();
+                }
+                const patentQualityData = {
+                    labels: ['인용된 특허 (8%)', '미인용 특허 (92%)'],
+                    datasets: [{
+                        data: [8, 92],
+                        backgroundColor: [PALETTE.amber, '#E0E0E0'],
+                        hoverOffset: 4
+                    }]
+                };
+                window.patentQualityChart = new Chart(document.getElementById('patentQualityChart'), {
+                    type: 'doughnut',
+                    data: patentQualityData,
+                    options: {
+                        ...SHARED_TOOLTIP_OPTIONS,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            ...SHARED_TOOLTIP_OPTIONS.plugins,
+                            legend: { position: 'bottom' },
+                        }
+                    }
+                });
+            }
+
+            if (document.getElementById('powerDemandChart')) {
+                if (window.powerDemandChart instanceof Chart) {
+                    window.powerDemandChart.destroy();
+                }
+                const powerDemandData = {
+                    labels: ['2023', '2024', '2025', '2026', '2027', '2028'],
+                    datasets: [{
+                        label: '데이터센터 전력 소모 전망 (연평균 11% 증가)',
+                        data: [100, 111, 123, 137, 152, 169],
+                        fill: true,
+                        backgroundColor: 'rgba(246, 81, 29, 0.2)',
+                        borderColor: PALETTE.orange,
+                        tension: 0.4
+                    }]
+                };
+                window.powerDemandChart = new Chart(document.getElementById('powerDemandChart'), {
+                    type: 'line',
+                    data: powerDemandData,
+                    options: {
+                        ...SHARED_TOOLTIP_OPTIONS,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { 
+                                beginAtZero: false,
+                                grid: { color: GRID_COLOR },
+                                title: { display: true, text: '상대적 전력 소모량' }
+                             },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: {
+                            ...SHARED_TOOLTIP_OPTIONS.plugins,
+                            legend: { display: false },
+                        }
+                    }
+                });
+            }
+
+            if (document.getElementById('semiconductorChart')) {
+                if (window.semiconductorChart instanceof Chart) {
+                    window.semiconductorChart.destroy();
+                }
+                const semiconductorData = {
+                    labels: ['한국 반도체 산업'],
+                    datasets: [
+                        {
+                            label: '메모리',
+                            data: [62],
+                            backgroundColor: PALETTE.blue,
+                        },
+                        {
+                            label: '시스템 (팹리스 등)',
+                            data: [3],
+                            backgroundColor: PALETTE.orange,
+                        },
+                        {
+                            label: '기타',
+                            data: [35],
+                            backgroundColor: '#E0E0E0',
+                        }
+                    ]
+                };
+                window.semiconductorChart = new Chart(document.getElementById('semiconductorChart'), {
+                    type: 'bar',
+                    data: semiconductorData,
+                    options: {
+                        ...SHARED_TOOLTIP_OPTIONS,
+                        indexAxis: 'y',
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                max: 100,
+                                grid: { color: GRID_COLOR },
+                                title: { display: true, text: '시장 점유율 (%)' }
+                            },
+                            y: {
+                                stacked: true,
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            ...SHARED_TOOLTIP_OPTIONS.plugins,
+                            legend: { position: 'bottom' },
+                        }
+                    }
+                });
+            }
+
+            if (document.getElementById('dataScarcityChart')) {
+                if (window.dataScarcityChart instanceof Chart) {
+                    window.dataScarcityChart.destroy();
+                }
+                const dataScarcityData = {
+                    labels: ['한국어 데이터 (<0.015%)', '기타 언어 데이터'],
+                    datasets: [{
+                        data: [0.015, 99.985],
+                        backgroundColor: [PALETTE.orange, '#E0E0E0'],
+                        hoverOffset: 4,
+                        borderWidth: 0,
+                    }]
+                };
+                window.dataScarcityChart = new Chart(document.getElementById('dataScarcityChart'), {
+                    type: 'pie',
+                    data: dataScarcityData,
+                    options: {
+                        ...SHARED_TOOLTIP_OPTIONS,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            ...SHARED_TOOLTIP_OPTIONS.plugins,
+                            legend: { position: 'bottom' },
+                        }
+                    }
+                });
+            }
+        }
+
+
+        let currentPage = 1;
+        const totalPages = 8; 
+        const pages = [];
+        for (let i = 1; i <= totalPages; i++) {
+            pages.push(document.getElementById(`page-${i}`));
+        }
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        function updatePageDisplay() {
+            pages.forEach((page, index) => {
+                if (index + 1 === currentPage) {
+                    page.classList.remove('page-prev', 'page-next');
+                    page.classList.add('page-active');
+                } else if (index + 1 < currentPage) {
+                    page.classList.remove('page-active', 'page-next');
+                    page.classList.add('page-prev');
+                } else {
+                    page.classList.remove('page-active', 'page-prev');
+                    page.classList.add('page-next');
+                }
+            });
+
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+
+            // 특정 페이지로 이동할 때 차트 다시 렌더링
+            // 페이지가 활성화될 때 차트를 다시 그리는 것이 중요합니다.
+            if (currentPage === 3 || currentPage === 5 || currentPage === 6) {
+                renderCharts();
+            }
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePageDisplay();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updatePageDisplay();
+            }
+        });
+
+        // 초기 페이지 로드 시 디스플레이 및 차트 렌더링
+        updatePageDisplay();
+        renderCharts(); 
+    </script>
+
+</body>
+</html>
